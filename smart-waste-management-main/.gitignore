@@ -1,0 +1,66 @@
+# ------------------------------------------------------------------------------
+# Smart Waste Management System — .gitignore
+# ------------------------------------------------------------------------------
+
+# Python virtual environments
+venv/
+.venv/
+env/
+.env/
+
+# Python bytecode and caches
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+
+# Local environment / secrets
+.env
+.env.*
+!.env.example
+
+# SQLite runtime database (schema: sql/database_schema.sql)
+waste_management.db
+waste_management.db-journal
+waste_management.db-wal
+waste_management.db-shm
+*.db-journal
+
+# Simulator and flow editor backups (not source of truth)
+simulator/*.bak
+simulator/bin_simulator.py.bak
+
+# Node-RED / Node.js (if installed locally in project)
+node_modules/
+.npm/
+.node_repl_history
+
+# Logs and debug output
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test / coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# IDE and editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.cursor/
+
+# Operating system files
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/

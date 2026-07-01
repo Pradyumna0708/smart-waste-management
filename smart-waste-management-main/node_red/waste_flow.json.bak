@@ -1,0 +1,668 @@
+[
+    {
+        "id": "sheet_waste_flow",
+        "type": "tab",
+        "label": "Smart Waste Flow",
+        "disabled": false,
+        "info": "Smart Waste Management System flow. Subscribes to MQTT data, calculates status, logs to SQLite, triggers full-bin notifications, and populates the dashboard."
+    },
+    {
+        "id": "ui_base_node",
+        "type": "ui_base",
+        "theme": {
+            "name": "theme-dark",
+            "lightTheme": {
+                "default": "#009688",
+                "baseColor": "#009688",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif",
+                "edited": true,
+                "reset": false
+            },
+            "darkTheme": {
+                "default": "#097479",
+                "baseColor": "#097479",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif",
+                "blend": 0.2,
+                "edited": true,
+                "reset": false
+            },
+            "customTheme": {
+                "name": "Untitled Theme 1",
+                "default": "#4A90E2",
+                "baseColor": "#4A90E2",
+                "baseFont": "-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Oxygen,Ubuntu,Cantarell,Fira Sans,Droid Sans,Helvetica Neue,sans-serif"
+            },
+            "angularTheme": {
+                "primary": "indigo",
+                "accents": "blue",
+                "warn": "red",
+                "background": "grey",
+                "palette": "light"
+            }
+        }
+    },
+    {
+        "id": "tab_overview",
+        "type": "ui_tab",
+        "name": "Overview",
+        "label": "Overview",
+        "theme": "ui_base_node",
+        "icon": "dashboard",
+        "order": 1,
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "tab_monitoring",
+        "type": "ui_tab",
+        "name": "Bin Monitoring",
+        "label": "Bin Monitoring",
+        "theme": "ui_base_node",
+        "icon": "table_chart",
+        "order": 2,
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "tab_map",
+        "type": "ui_tab",
+        "name": "Bin Locations Map",
+        "label": "Bin Locations Map",
+        "theme": "ui_base_node",
+        "icon": "map",
+        "order": 3,
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "tab_trends",
+        "type": "ui_tab",
+        "name": "Analytics & Trends",
+        "label": "Analytics & Trends",
+        "theme": "ui_base_node",
+        "icon": "show_chart",
+        "order": 4,
+        "disabled": false,
+        "hidden": false
+    },
+    {
+        "id": "group_counts",
+        "type": "ui_group",
+        "name": "Bin Counts Summary",
+        "tab": "tab_overview",
+        "order": 1,
+        "disp": true,
+        "width": "6",
+        "collapse": false
+    },
+    {
+        "id": "group_stats",
+        "type": "ui_group",
+        "name": "System Statistics",
+        "tab": "tab_overview",
+        "order": 2,
+        "disp": true,
+        "width": "6",
+        "collapse": false
+    },
+    {
+        "id": "group_table",
+        "type": "ui_group",
+        "name": "Live Telemetry Table",
+        "tab": "tab_monitoring",
+        "order": 1,
+        "disp": true,
+        "width": "12",
+        "collapse": false
+    },
+    {
+        "id": "group_map",
+        "type": "ui_group",
+        "name": "Live Map View",
+        "tab": "tab_map",
+        "order": 1,
+        "disp": true,
+        "width": "12",
+        "collapse": false
+    },
+    {
+        "id": "group_charts",
+        "type": "ui_group",
+        "name": "Sensor Trends",
+        "tab": "tab_trends",
+        "order": 1,
+        "disp": true,
+        "width": "12",
+        "collapse": false
+    },
+    {
+        "id": "mqtt_broker_config",
+        "type": "mqtt-broker",
+        "name": "Local Mosquitto",
+        "broker": "localhost",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "compatmode": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": ""
+    },
+    {
+        "id": "sqlite_db_config",
+        "type": "sqlitedb",
+        "db": "D:/smart-waste-management/waste_management.db",
+        "mode": "RWC"
+    },
+    {
+        "id": "mqtt_in_node",
+        "type": "mqtt in",
+        "z": "sheet_waste_flow",
+        "name": "Subscribe Bins",
+        "topic": "waste/bin/data",
+        "qos": "0",
+        "datatype": "utf8",
+        "broker": "mqtt_broker_config",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 130,
+        "y": 280,
+        "wires": [
+            [
+                "json_parser_node"
+            ]
+        ]
+    },
+    {
+        "id": "json_parser_node",
+        "type": "json",
+        "z": "sheet_waste_flow",
+        "name": "Parse JSON",
+        "property": "payload",
+        "action": "",
+        "pretty": false,
+        "x": 290,
+        "y": 280,
+        "wires": [
+            [
+                "status_calc_node"
+            ]
+        ]
+    },
+    {
+        "id": "status_calc_node",
+        "type": "function",
+        "z": "sheet_waste_flow",
+        "name": "Calculate Status",
+        "func": "// Extract fill level from JSON payload\nlet fill = msg.payload.fill_level;\nlet status = \"Normal\";\n\n// Status classification rules\nif (fill > 80) {\n    status = \"Critical\";\n} else if (fill > 50) {\n    status = \"Warning\";\n}\n\n// Add status field to the payload object\nmsg.payload.status = status;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 460,
+        "y": 280,
+        "wires": [
+            [
+                "sql_query_builder",
+                "overview_aggregator",
+                "table_mapper",
+                "map_mapper",
+                "fill_chart_mapper",
+                "weight_chart_mapper",
+                "alert_check_node"
+            ]
+        ]
+    },
+    {
+        "id": "sql_query_builder",
+        "type": "function",
+        "z": "sheet_waste_flow",
+        "name": "Build SQL Query",
+        "func": "let p = msg.payload;\n\n// Safely format parameters into SQL query\nmsg.topic = `INSERT INTO waste_data (bin_id, fill_level, weight, latitude, longitude, timestamp, status) VALUES ('${p.bin_id}', ${p.fill_level}, ${p.weight}, ${p.latitude}, ${p.longitude}, '${p.timestamp}', '${p.status}');`;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 670,
+        "y": 80,
+        "wires": [
+            [
+                "sqlite_database_node"
+            ]
+        ]
+    },
+    {
+        "id": "sqlite_database_node",
+        "type": "sqlite",
+        "z": "sheet_waste_flow",
+        "name": "Save to SQLite",
+        "mydb": "sqlite_db_config",
+        "sqltype": "statement",
+        "ret": "plain",
+        "x": 880,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "overview_aggregator",
+        "type": "function",
+        "z": "sheet_waste_flow",
+        "name": "Aggregate Stats",
+        "func": "// Fetch global flow state or initialize default\nlet bins = flow.get('bins') || {};\nlet totalRecords = flow.get('totalRecords') || 0;\n\nlet p = msg.payload;\nbins[p.bin_id] = p; // Update status/state of current bin\ntotalRecords += 1;  // Increment total telemetry packets received\n\n// Save updated states back to flow memory\nflow.set('bins', bins);\nflow.set('totalRecords', totalRecords);\n\n// Count bins based on status thresholds\nlet normal = 0;\nlet warning = 0;\nlet critical = 0;\n\nfor (let id in bins) {\n    let status = bins[id].status;\n    if (status === \"Normal\") normal++;\n    else if (status === \"Warning\") warning++;\n    else if (status === \"Critical\") critical++;\n}\n\nlet totalBins = Object.keys(bins).length;\n\n// Return array of outputs, mapped to widgets\nreturn [\n    { payload: totalBins },\n    { payload: normal },\n    { payload: warning },\n    { payload: critical },\n    { payload: totalRecords },\n    { payload: p.timestamp }\n];",
+        "outputs": 6,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 670,
+        "y": 200,
+        "wires": [
+            ["ui_text_total_bins"],
+            ["ui_text_normal_bins"],
+            ["ui_text_warning_bins"],
+            ["ui_text_critical_bins"],
+            ["ui_text_total_records"],
+            ["ui_text_last_updated"]
+        ]
+    },
+    {
+        "id": "ui_text_total_bins",
+        "type": "ui_text",
+        "z": "sheet_waste_flow",
+        "group": "group_counts",
+        "order": 1,
+        "width": "6",
+        "height": "1",
+        "name": "Total Bins",
+        "label": "Total Monitored Bins:",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "x": 910,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "ui_text_normal_bins",
+        "type": "ui_text",
+        "z": "sheet_waste_flow",
+        "group": "group_counts",
+        "order": 2,
+        "width": "6",
+        "height": "1",
+        "name": "Normal Bins",
+        "label": "Normal Bins (0-50%):",
+        "format": "<span style='color: #48bb78; font-weight: bold;'>{{msg.payload}}</span>",
+        "layout": "row-spread",
+        "x": 910,
+        "y": 170,
+        "wires": []
+    },
+    {
+        "id": "ui_text_warning_bins",
+        "type": "ui_text",
+        "z": "sheet_waste_flow",
+        "group": "group_counts",
+        "order": 3,
+        "width": "6",
+        "height": "1",
+        "name": "Warning Bins",
+        "label": "Warning Bins (51-80%):",
+        "format": "<span style='color: #ecc94b; font-weight: bold;'>{{msg.payload}}</span>",
+        "layout": "row-spread",
+        "x": 910,
+        "y": 200,
+        "wires": []
+    },
+    {
+        "id": "ui_text_critical_bins",
+        "type": "ui_text",
+        "z": "sheet_waste_flow",
+        "group": "group_counts",
+        "order": 4,
+        "width": "6",
+        "height": "1",
+        "name": "Critical Bins",
+        "label": "Critical Bins (81-100%):",
+        "format": "<span style='color: #f56565; font-weight: bold;'>{{msg.payload}}</span>",
+        "layout": "row-spread",
+        "x": 910,
+        "y": 230,
+        "wires": []
+    },
+    {
+        "id": "ui_text_total_records",
+        "type": "ui_text",
+        "z": "sheet_waste_flow",
+        "group": "group_stats",
+        "order": 1,
+        "width": "6",
+        "height": "1",
+        "name": "Total Records",
+        "label": "Total Records Logged:",
+        "format": "{{msg.payload}}",
+        "layout": "row-spread",
+        "x": 910,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "ui_text_last_updated",
+        "type": "ui_text",
+        "z": "sheet_waste_flow",
+        "group": "group_stats",
+        "order": 2,
+        "width": "6",
+        "height": "1",
+        "name": "Last Updated",
+        "label": "Last Updated Time:",
+        "format": "<span style='color: #42a5f5; font-weight: bold;'>{{msg.payload}}</span>",
+        "layout": "row-spread",
+        "x": 910,
+        "y": 290,
+        "wires": []
+    },
+    {
+        "id": "table_mapper",
+        "type": "function",
+        "z": "sheet_waste_flow",
+        "name": "Format for Table",
+        "func": "let bins = flow.get('bins') || {};\nlet tableData = [];\nfor (let id in bins) {\n    let status = bins[id].status || 'Normal';\n    let statusHTML = `<span class=\"status-pill ${status.toLowerCase()}\">${status}</span>`;\n    tableData.push({\n        \"Bin ID\": bins[id].bin_id,\n        \"Fill Level (%)\": bins[id].fill_level,\n        \"Weight (kg)\": bins[id].weight,\n        \"Status\": statusHTML\n    });\n}\n\n// Sort alphabetical by Bin ID\ntableData.sort((a, b) => a[\"Bin ID\"].localeCompare(b[\"Bin ID\"]));\nmsg.payload = tableData;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 670,
+        "y": 340,
+        "wires": [
+            [
+                "ui_table_bins"
+            ]
+        ]
+    },
+    {
+        "id": "ui_table_bins",
+        "type": "ui_table",
+        "z": "sheet_waste_flow",
+        "group": "group_table",
+        "name": "Bins Table",
+        "order": 1,
+        "width": "12",
+        "height": "6",
+        "columns": [
+            {
+                "field": "Bin ID",
+                "title": "Bin ID",
+                "width": "",
+                "align": "left",
+                "formatter": "plaintext",
+                "formatterParams": { "target": "_blank" }
+            },
+            {
+                "field": "Fill Level (%)",
+                "title": "Fill Level (%)",
+                "width": "",
+                "align": "center",
+                "formatter": "plaintext",
+                "formatterParams": { "target": "_blank" }
+            },
+            {
+                "field": "Weight (kg)",
+                "title": "Weight (kg)",
+                "width": "",
+                "align": "center",
+                "formatter": "plaintext",
+                "formatterParams": { "target": "_blank" }
+            },
+            {
+                "field": "Status",
+                "title": "Status",
+                "width": "",
+                "align": "center",
+                "formatter": "html",
+                "formatterParams": { "target": "_blank" }
+            }
+        ],
+        "outputs": 0,
+        "x": 870,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "map_mapper",
+        "type": "function",
+        "z": "sheet_waste_flow",
+        "name": "Format for Map",
+        "func": "let p = msg.payload;\n\n// Choose marker pin color based on fill status\nlet color = \"green\";\nif (p.status === \"Warning\") {\n    color = \"orange\";\n} else if (p.status === \"Critical\") {\n    color = \"red\";\n}\n\n// Construct marker payload structure for worldmap node\nmsg.payload = {\n    name: p.bin_id,\n    lat: p.latitude,\n    lon: p.longitude,\n    icon: \"trash\",\n    iconColor: \"white\",\n    markerColor: color,\n    layer: \"Garbage Bins\",\n    popup: `<b>${p.bin_id}</b><br>Fill Level: ${p.fill_level}%<br>Weight: ${p.weight} kg<br>Status: ${p.status}`\n};\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 660,
+        "y": 420,
+        "wires": [
+            [
+                "ui_worldmap_node"
+            ]
+        ]
+    },
+    {
+        "id": "ui_worldmap_node",
+        "type": "worldmap",
+        "z": "sheet_waste_flow",
+        "name": "Map Markers",
+        "lat": "18.5204",
+        "lon": "73.8567",
+        "zoom": "12",
+        "layer": "OSM",
+        "hideright": "true",
+        "hidelayers": "true",
+        "panit": "false",
+        "x": 880,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "ui_map_frame",
+        "type": "ui_template",
+        "z": "sheet_waste_flow",
+        "group": "group_map",
+        "name": "Map Widget Frame",
+        "order": 1,
+        "width": "12",
+        "height": "10",
+        "format": "<iframe src=\"/worldmap\" style=\"width: 100%; height: 500px; border: none; border-radius: 8px;\"></iframe>",
+        "storeOutMessages": true,
+        "fwdInMessages": true,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "x": 890,
+        "y": 470,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "fill_chart_mapper",
+        "type": "function",
+        "z": "sheet_waste_flow",
+        "name": "Format Fill Chart",
+        "func": "// Set series line label as Bin ID, data as value\nmsg.topic = msg.payload.bin_id;\nmsg.payload = msg.payload.fill_level;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 670,
+        "y": 520,
+        "wires": [
+            [
+                "ui_chart_fill"
+            ]
+        ]
+    },
+    {
+        "id": "ui_chart_fill",
+        "type": "ui_chart",
+        "z": "sheet_waste_flow",
+        "group": "group_charts",
+        "order": 1,
+        "width": "12",
+        "height": "5",
+        "label": "Fill Level Trend (%)",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "Awaiting Telemetry...",
+        "dot": false,
+        "ymin": "0",
+        "ymax": "100",
+        "removeOlder": "1",
+        "removeOlderCoeff": "3600",
+        "removeOlderUnit": "3600",
+        "x": 880,
+        "y": 520,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "weight_chart_mapper",
+        "type": "function",
+        "z": "sheet_waste_flow",
+        "name": "Format Weight Chart",
+        "func": "msg.topic = msg.payload.bin_id;\nmsg.payload = msg.payload.weight;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 680,
+        "y": 580,
+        "wires": [
+            [
+                "ui_chart_weight"
+            ]
+        ]
+    },
+    {
+        "id": "ui_chart_weight",
+        "type": "ui_chart",
+        "z": "sheet_waste_flow",
+        "group": "group_charts",
+        "order": 2,
+        "width": "12",
+        "height": "5",
+        "label": "Garbage Weight Trend (kg)",
+        "chartType": "line",
+        "legend": "true",
+        "xformat": "HH:mm:ss",
+        "interpolate": "linear",
+        "nodata": "Awaiting Telemetry...",
+        "dot": false,
+        "ymin": "0",
+        "ymax": "60",
+        "removeOlder": "1",
+        "removeOlderCoeff": "3600",
+        "removeOlderUnit": "3600",
+        "x": 890,
+        "y": 580,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "alert_check_node",
+        "type": "switch",
+        "z": "sheet_waste_flow",
+        "name": "Level > 80%?",
+        "property": "payload.fill_level",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "gt",
+                "v": "80",
+                "vt": "num"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 1,
+        "x": 660,
+        "y": 660,
+        "wires": [
+            [
+                "alert_formatter_node"
+            ]
+        ]
+    },
+    {
+        "id": "alert_formatter_node",
+        "type": "function",
+        "z": "sheet_waste_flow",
+        "name": "Format Alert Msg",
+        "func": "let p = msg.payload;\nlet cities = {\n    \"BIN001\": \"Pune (Kothrud)\",\n    \"BIN002\": \"Pune (Koregaon Park)\",\n    \"BIN003\": \"Pune (Shivajinagar)\",\n    \"BIN004\": \"Pune (Viman Nagar)\",\n    \"BIN005\": \"Pune (Hadapsar)\"\n};\nlet city = cities[p.bin_id] || \"Unknown\";\n\n// Format display string for the dashboard toast banner\nmsg.payload = `ALERT: ${p.bin_id} (${city}) is Full at ${p.fill_level}%!`;\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 860,
+        "y": 660,
+        "wires": [
+            [
+                "ui_toast_node"
+            ]
+        ]
+    },
+    {
+        "id": "ui_toast_node",
+        "type": "ui_toast",
+        "z": "sheet_waste_flow",
+        "name": "Toast Alert Banner",
+        "position": "top right",
+        "displayTime": "5",
+        "highlight": "red",
+        "send": "false",
+        "outputs": 0,
+        "x": 1050,
+        "y": 660,
+        "wires": []
+    },
+    {
+        "id": "global_css_theme",
+        "type": "ui_template",
+        "z": "sheet_waste_flow",
+        "group": "group_counts",
+        "name": "Global Theme CSS",
+        "order": 99,
+        "width": 0,
+        "height": 0,
+        "format": "<style>\n/* Import Modern Font */\n@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');\n\n/* Apply font to everything */\nbody, md-content, div, p, span, h1, h2, h3, h4, h5, h6, table, tr, td, th, input, button, select {\n    font-family: 'Outfit', -apple-system, sans-serif !important;\n}\n\n/* Global dashboard theme override */\n.nr-dashboard-theme {\n    background-color: #0b0f19 !important;\n}\n\n/* Header toolbar glassmorphism */\nmd-toolbar.nr-dashboard-toolbar {\n    background: rgba(21, 28, 44, 0.8) !important;\n    backdrop-filter: blur(12px) !important;\n    -webkit-backdrop-filter: blur(12px) !important;\n    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;\n    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;\n}\n\nmd-toolbar.nr-dashboard-toolbar h1 {\n    font-weight: 700 !important;\n    letter-spacing: 0.5px !important;\n    color: #ffffff !important;\n    font-size: 20px !important;\n}\n\n/* Sidebar Navigation Drawer styling */\nmd-sidenav.nr-dashboard-drawer {\n    background-color: #0f172a !important;\n    border-right: 1px solid rgba(255, 255, 255, 0.05) !important;\n}\n\nmd-sidenav.nr-dashboard-drawer md-content {\n    background-color: #0f172a !important;\n}\n\nmd-sidenav.nr-dashboard-drawer md-list-item button {\n    border-radius: 8px !important;\n    margin: 4px 12px !important;\n    transition: all 0.2s ease !important;\n    color: #94a3b8 !important;\n}\n\nmd-sidenav.nr-dashboard-drawer md-list-item button:hover {\n    background-color: rgba(255, 255, 255, 0.03) !important;\n    color: #ffffff !important;\n}\n\nmd-sidenav.nr-dashboard-drawer md-list-item.active button {\n    background-color: rgba(14, 165, 233, 0.15) !important;\n    color: #38bdf8 !important;\n    font-weight: 600 !important;\n}\n\n/* Style cards */\n.nr-dashboard-card {\n    background: linear-gradient(135deg, #151c2c 0%, #111827 100%) !important;\n    border: 1px solid rgba(255, 255, 255, 0.05) !important;\n    border-radius: 12px !important;\n    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;\n    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;\n    padding: 16px !important;\n    margin: 8px !important;\n}\n\n.nr-dashboard-card:hover {\n    transform: translateY(-2px) !important;\n    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5) !important;\n    border-color: rgba(14, 165, 233, 0.2) !important;\n}\n\n/* Card Titles */\n.nr-dashboard-cardtitle {\n    font-size: 15px !important;\n    font-weight: 700 !important;\n    text-transform: uppercase !important;\n    letter-spacing: 1px !important;\n    color: #38bdf8 !important;\n    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;\n    padding-bottom: 8px !important;\n    margin-bottom: 12px !important;\n}\n\n/* Text Widget Rows (spacing and visual alignment) */\n.nr-dashboard-text {\n    padding: 10px 0 !important;\n    border-bottom: 1px dashed rgba(255, 255, 255, 0.03) !important;\n    display: flex !important;\n    justify-content: space-between !important;\n    align-items: center !important;\n}\n\n.nr-dashboard-text:last-of-type {\n    border-bottom: none !important;\n}\n\n/* Table styling override */\n.nr-dashboard-table {\n    border-collapse: separate !important;\n    border-spacing: 0 !important;\n    width: 100% !important;\n    background: transparent !important;\n    color: #e2e8f0 !important;\n}\n\n.nr-dashboard-table th {\n    background-color: rgba(30, 41, 59, 0.8) !important;\n    color: #38bdf8 !important;\n    font-weight: 700 !important;\n    text-transform: uppercase !important;\n    font-size: 11px !important;\n    letter-spacing: 0.5px !important;\n    padding: 12px 16px !important;\n    border-bottom: 2px solid rgba(255, 255, 255, 0.05) !important;\n}\n\n.nr-dashboard-table td {\n    padding: 12px 16px !important;\n    border-bottom: 1px solid rgba(255, 255, 255, 0.03) !important;\n    font-size: 13px !important;\n    background: transparent !important;\n}\n\n.nr-dashboard-table tr:hover td {\n    background-color: rgba(255, 255, 255, 0.02) !important;\n}\n\n/* Table statuses style custom pill shapes */\n.status-pill {\n    display: inline-block !important;\n    padding: 2px 8px !important;\n    border-radius: 4px !important;\n    font-weight: bold !important;\n    font-size: 11px !important;\n    text-transform: uppercase !important;\n}\n.status-pill.normal {\n    background-color: rgba(16, 185, 129, 0.15) !important;\n    color: #10b981 !important;\n}\n.status-pill.warning {\n    background-color: rgba(245, 158, 11, 0.15) !important;\n    color: #f59e0b !important;\n}\n.status-pill.critical {\n    background-color: rgba(239, 68, 68, 0.15) !important;\n    color: #ef4444 !important;\n    animation: status-pulse 1.5s infinite !important;\n}\n@keyframes status-pulse {\n    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }\n    70% { box-shadow: 0 0 0 5px rgba(239, 68, 68, 0); }\n    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }\n}\n\n/* Chart styling adjustments */\n.nr-dashboard-chart {\n    background: transparent !important;\n}\n\n.nr-dashboard-chart .legend-label {\n    color: #94a3b8 !important;\n    font-size: 11px !important;\n}\n\n/* Map frame styling */\niframe {\n    border-radius: 8px !important;\n    border: 1px solid rgba(255, 255, 255, 0.05) !important;\n}\n\n/* Custom Scrollbars */\n::-webkit-scrollbar {\n    width: 8px;\n    height: 8px;\n}\n\n::-webkit-scrollbar-track {\n    background: #0b0f19;\n}\n\n::-webkit-scrollbar-thumb {\n    background: #1e293b;\n    border-radius: 4px;\n}\n\n::-webkit-scrollbar-thumb:hover {\n    background: #334155;\n}\n</style>",
+        "storeOutMessages": false,
+        "fwdInMessages": false,
+        "resendOnRefresh": false,
+        "templateScope": "global",
+        "x": 670,
+        "y": 140,
+        "wires": [[]]
+    }
+]

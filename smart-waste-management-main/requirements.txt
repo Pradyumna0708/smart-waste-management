@@ -1,0 +1,3 @@
+# Python dependencies for Smart Waste Management System Simulator
+# Restricted to paho-mqtt 1.x to ensure compatibility with standard beginner tutorials
+paho-mqtt<2.0.0
